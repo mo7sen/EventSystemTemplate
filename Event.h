@@ -2,12 +2,12 @@
 #define __EVENT_HEADER__
 
 #include "events/MouseEvent.h"
-#include "events/KeyboardEvent.h"
+#include "events/KeyEvent.h"
 #include "events/WindowEvent.h"
 
 enum EventCategory
 {
-	KeyboardEvent,
+	KeyEvent,
 	MouseEvent,
 	WindowEvent,
 	
@@ -22,13 +22,13 @@ struct Event
 	enum EventCategory category;
 	union {
 		enum MouseEvent mouse;
-		enum KeyboardEvent keyboard;
+		enum KeyEvent keyboard;
 		enum WindowEvent window;
 	} eventType;
 	union {
-		struct MouseEventDetails mouseEventDetails;
-		struct KeyboardEventDetails keyboardEventDetails;
-		struct WindowEventDetails windowEventDetails;
+		struct MouseEventData mouseEventData;
+		struct KeyEventData keyEventData;
+		struct WindowEventData windowEventData;
 	} eventDetails;
 };
 

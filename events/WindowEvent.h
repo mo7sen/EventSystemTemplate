@@ -1,15 +1,27 @@
 #ifndef __WINDOW_EVENT_HEADER__
 #define __WINDOW_EVENT_HEADER__
-typedef unsigned int WindowSize[2];
+
+#include <stdbool.h>
+
+struct Rect2D {
+	unsigned int x;
+	unsigned int y;
+	unsigned int width;
+	unsigned int height;
+};
 
 enum WindowEvent
 {
 	WindowResized,
 	WindowMinimized,
+	WindowMaximized,
+	WindowMoved,
+	WindowFullScreenToggle,
 };
 
-struct WindowEventDetails
+struct WindowEventData
 {
-	WindowSize windowSize;
+	struct Rect2D rect;
+	bool fullScreen;
 };
 #endif
