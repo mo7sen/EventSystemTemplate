@@ -21,7 +21,7 @@ unsigned int event_buffer_clear(struct EventBuffer *eventBuffer);
 static inline void event_buffer_for_each(struct EventBuffer *eventBuffer, enum EventType type, void (*handler)(enum EventType, void *))
 {
 	for(int index = 0; index < eventBuffer->sizes[type]; ++index)
-		handler(type, eventBuffer->buffers[type]+ (index * EVENT_SIZE));
+		handler(type, ((char*)eventBuffer->buffers[type]) + (index * EVENT_SIZE));
 }
 
 #endif

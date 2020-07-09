@@ -32,7 +32,7 @@ unsigned int event_buffer_add(struct EventBuffer *eventBuffer, void *event)
 			assert(!"Couldn't Realloc event buffer");
 	}
 
-	memcpy(eventBuffer->buffers[eventType] + eventBuffer->sizes[eventType] * EVENT_SIZE, event, EVENT_SIZE);
+	memcpy(((char*)eventBuffer->buffers[eventType]) + eventBuffer->sizes[eventType] * EVENT_SIZE, event, EVENT_SIZE);
 	eventBuffer->sizes[eventType]++;
 
 	return 0;

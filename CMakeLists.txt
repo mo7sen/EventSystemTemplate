@@ -23,6 +23,8 @@ if(DEFINED EVENT_DIRECTORY)
 	endif()
 endif()
 
+configure_file(cmake_config.h.in cmake_config.h)
+
 add_executable ( event_system
 	src/main.c
 	src/EventSystem.c
