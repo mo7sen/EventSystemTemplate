@@ -1,37 +1,24 @@
-#ifndef __EVENT_HEADER__
-#define __EVENT_HEADER__
+#ifndef EVENT_CONFIG_H
+#define EVENT_CONFIG_H
 
-#include "cmake_config.h"
+#define INITIAL_EVENT_BUFFER_CAPACITY 200
+#define EVENT_SIZE 64 // Should always be a multiple of 8 for alignment (not supporting 32 bits)
 
-#ifdef GENERATED_EVENT_HEADERS
-#include GENERATED_EVENT_HEADERS
+#ifdef GENERATED_EVENT_INCLUDES
+#include GENERATED_EVENT_INCLUDES
 #endif
+#include "events/MouseEvent.h"
 
-enum EventCategory
-{
-#ifdef GENERATED_EVENT_CATEGORIES
-#include GENERATED_EVENT_CATEGORIES
-#endif
-	
-	// Very Important!!!
-	// Any new EventTypes should be added before EVENT_TYPE_COUNT
-	EVENT_TYPE_COUNT,
-	// Never add anything in this area
-};
-
-struct Event
-{
-	enum EventCategory category;
-	union {
+enum EventType {
 #ifdef GENERATED_EVENT_TYPES
 #include GENERATED_EVENT_TYPES
 #endif
-	} eventType;
-	union {
-#ifdef GENERATED_EVENT_DATAS
-#include GENERATED_EVENT_DATAS
-#endif
-	} eventDetails;
+	MOUSE_EVENT,
+	KEY_EVENT,
+	WINDOW_EVENT,
+	
+	// this needs to always be the last variant in the enum
+	EVENT_TYPE_COUNT,
 };
 
 #endif

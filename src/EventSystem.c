@@ -1,84 +1,91 @@
 #include "EventSystem.h"
-#include "string.h"
 #include "assert.h"
-#include "stddef.h"
+#include "stdio.h"
 
-void event_system_init(struct EventSystem *system)
+static void event_system_init();
+static void event_system_deinit();
+static void event_system_add_listener(struct EventListener *listener, enum EventType type);
+static void event_system_remove_listener(struct EventListener *listener);
+static inline void event_system_remove_event_sub(struct EventListener *listener, enum EventType type);
+static void event_system_dispatch_event(void *event);
+static void event_system_update();
+
+struct event_system_struct EventSystem = {
+	.init = event_system_init,
+	.deinit = event_system_deinit,
+	.addListener = event_system_add_listener,
+	.removeListener = event_system_remove_listener,
+	.unsub = event_system_remove_event_sub,
+	.update = event_system_update,
+	.dispatch = event_system_dispatch_event,
+};
+
+static void event_system_init()
 {
-	memset(system, 0, sizeof(struct EventSystem));
-}
-
-void event_system_add_listener(struct EventSystem *system, struct EventListener *listener, enum EventCategory category)
-{
-	if(system->subSize[category] >= MAX_SUBSCRIBER_COUNT)
-		assert(!"Surpassed Max Subscriber Count");
-	system->subscribers[category][system->subSize[category]] = listener;
-	++system->subSize[category];
-}
-
-void event_system_add_event(struct EventSystem *sys, struct Event event)
-{
-	if(sys->eventSize[event.category] >= MAX_EVENTS)
-		assert(!"Surpassed Max Event Count");
-	sys->events[event.category][sys->eventSize[event.category]] = event;
-	++sys->eventSize[event.category];
-}
-
-void event_system_handle_category(struct EventSystem *sys, enum EventCategory category)
-{
-	for(int j = 0; j < sys->eventSize[category]; ++j)    // For each event
-	{
-		struct Event event = sys->events[category][j];
-		for(int k = 0; k < sys->subSize[category]; ++k)  // For each subscriber
-		{
-			if(!sys->subscribers[category][k] || !sys->subscribers[category][k]->typeSubs[category])
-				continue;
-
-			sys->subscribers[category][k]->handlers[category](&event.eventType, &event.eventDetails);
-		}
+	event_buffer_pair_init(&EventSystem.bufferPair);
+	vec_init(&EventSystem.listeners);
+	loop_event_types {
+		vec_init(&EventSystem.eventListeners[type]);
 	}
 }
 
-void event_system_update(struct EventSystem *sys)
+static void event_system_deinit()
 {
-	for(int i = 0; i < EVENT_TYPE_COUNT; ++i)         // For each event type
-		event_system_handle_category(sys, i);
+	event_buffer_pair_deinit(&EventSystem.bufferPair);
+	vec_deinit(&EventSystem.listeners);
+	loop_event_types {
+		vec_deinit(&EventSystem.eventListeners[type]);
+	}
 }
 
-void event_system_clear(struct EventSystem *sys)
+static void event_system_add_listener(struct EventListener *listener, enum EventType type)
 {
-	memset(sys, 0, offsetof(struct EventSystem, subSize));
+	unsigned int idx;
+	vec_find(&EventSystem.listeners, listener, idx);
+	if(idx == -1)
+		assert(!vec_push(&EventSystem.listeners, listener));
+	vec_find(&EventSystem.eventListeners[type], listener, idx);
+	if(idx == -1)
+		assert(!vec_push(&EventSystem.eventListeners[type], listener));
 }
 
-void event_listener_init(struct EventListener *listener)
+static inline void event_system_remove_event_sub(struct EventListener *listener, enum EventType type)
 {
-	memset(listener, 0, sizeof(struct EventListener));
+	unsigned int idx;
+	vec_find(&EventSystem.eventListeners[type], listener, idx);
+	if(idx != -1)
+		vec_remove(&EventSystem.eventListeners[type], listener);
 }
 
-void event_listener_set_sys(struct EventListener *lis, struct EventSystem *sys)
+static void event_system_remove_listener(struct EventListener *listener)
 {
-	lis->sys = sys;
+	loop_event_types {
+		event_system_remove_event_sub(listener, type);
+	}
+	unsigned int idx;
+	vec_find(&EventSystem.listeners, listener, idx);
+	if(idx != -1)
+		vec_remove(&EventSystem.listeners, listener);
 }
 
-void event_listener_subscribe(struct EventListener *listener, enum EventCategory category, void (*f)())
+static inline void handle_event(enum EventType type, void *event)
 {
-	listener->typeSubs[category] = true;
-	listener->handlers[category] = f;
-
-	event_system_add_listener(listener->sys, listener, category);
+	struct EventListener *listener; unsigned int __idx;
+	vec_foreach(&EventSystem.eventListeners[type], listener, __idx) {
+		listener->handlers[type](event);
+	}
 }
 
-void event_dispatcher_init(struct EventDispatcher *dispatcher)
+static void event_system_update()
 {
-	memset(dispatcher, 0, sizeof(struct EventDispatcher));
+	event_buffer_pair_swap(&EventSystem.bufferPair);
+	loop_event_types {
+		event_buffer_pair_for_each(&EventSystem.bufferPair, type, handle_event);
+	}
+	event_buffer_pair_clear_read(&EventSystem.bufferPair);
 }
 
-void event_dispatcher_set_sys(struct EventDispatcher *dis, struct EventSystem *sys)
+static void event_system_dispatch_event(void *event)
 {
-	dis->sys = sys;
-}
-
-void event_dispatch(struct EventDispatcher *dis, struct Event event)
-{
-	event_system_add_event(dis->sys, event);
+	event_buffer_pair_add_event(&EventSystem.bufferPair, event);
 }
