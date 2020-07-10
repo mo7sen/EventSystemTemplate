@@ -3,9 +3,6 @@ cmake_minimum_required(VERSION 3.1)
 project(event_system)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_BUILD_TYPE Debug)
-
-set(EVENT_DIRECTORY "${event_system_SOURCE_DIR}/events")
 
 if(DEFINED EVENT_DIRECTORY)
 	message("Event Dir: ${EVENT_DIRECTORY}")
@@ -25,8 +22,7 @@ endif()
 
 configure_file(cmake_config.h.in cmake_config.h)
 
-add_executable ( event_system
-	src/main.c
+add_library ( event_system
 	src/EventSystem.c
 	src/EventBuffer.c
 	src/BufferPair.c
