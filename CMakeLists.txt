@@ -34,5 +34,15 @@ target_include_directories(event_system PUBLIC
 	include
 	${event_system_SOURCE_DIR}
 	${event_system_BINARY_DIR}
+	extern/pthreads4w/include
 	)
+
+target_link_directories(event_system PUBLIC
+		extern/pthreads4w/lib/x64
+		extern/pthreads4w/dll/x64
+		)
+
+target_link_libraries(event_system
+		pthreadVC2
+		)
 

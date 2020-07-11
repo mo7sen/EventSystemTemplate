@@ -3,6 +3,9 @@
 #include "string.h"
 #include "assert.h"
 #include "stdio.h"
+#include "pthread.h"
+
+pthread_mutex_t addEventMutex = PTHREAD_MUTEX_INITIALIZER;
 
 void event_buffer_init(struct EventBuffer *eventBuffer)
 {
@@ -24,6 +27,12 @@ unsigned int event_buffer_add(struct EventBuffer *eventBuffer, void *event)
 {
 	unsigned int eventType = *(unsigned int *)event;
 
+	int error;
+	if((error = pthread_mutex_lock(&addEventMutex)) != 0)
+    {
+        fprintf (stderr, "Error = %d (%s)\n", error, strerror(error)); exit (1);
+    }
+
 	if(eventBuffer->capacities[eventType] - (eventBuffer->sizes[eventType] * EVENT_SIZE) <= EVENT_SIZE)
 	{
 		unsigned int newCapacity = (unsigned int)((float)eventBuffer->capacities[eventType] * 1.2);
@@ -37,9 +46,13 @@ unsigned int event_buffer_add(struct EventBuffer *eventBuffer, void *event)
 		else
 			assert(!"Couldn't Realloc event buffer");
 	}
+    eventBuffer->sizes[eventType]++;
+
+    if ((error = pthread_mutex_unlock (&addEventMutex)) != 0) {
+        fprintf (stderr, "Error = %d (%s)\n", error, strerror(error)); exit (1);
+    }
 
 	memcpy(((char*)eventBuffer->buffers[eventType]) + eventBuffer->sizes[eventType] * EVENT_SIZE, event, EVENT_SIZE);
-	eventBuffer->sizes[eventType]++;
 
 	return 0;
 }
