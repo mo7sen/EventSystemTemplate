@@ -8,7 +8,7 @@ if(DEFINED EVENT_DIRECTORY)
 	message("Event Dir: ${EVENT_DIRECTORY}")
 	file(MAKE_DIRECTORY "${event_system_SOURCE_DIR}/generated")
 
-	set(GENERATED_EVENT_INCLUDES    ${event_system_SOURCE_DIR}/generated/event_headers.h)
+	set(GENERATED_EVENT_INCLUDES   ${event_system_SOURCE_DIR}/generated/event_headers.h)
 	set(GENERATED_EVENT_TYPES      ${event_system_SOURCE_DIR}/generated/event_types.h)
 
 	if(WIN32)
@@ -20,7 +20,7 @@ if(DEFINED EVENT_DIRECTORY)
 	endif()
 endif()
 
-configure_file(cmake_config.h.in cmake_config.h)
+configure_file(generated_config.h.in generated_config.h)
 
 add_library ( event_system
 	src/EventSystem.c

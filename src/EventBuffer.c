@@ -2,12 +2,13 @@
 #include "stdlib.h"
 #include "string.h"
 #include "assert.h"
+#include "stdio.h"
 
 void event_buffer_init(struct EventBuffer *eventBuffer)
 {
 	loop_event_types {
 		eventBuffer->buffers[type] = malloc(EVENT_SIZE * INITIAL_EVENT_BUFFER_CAPACITY);
-		eventBuffer->capacities[type] = INITIAL_EVENT_BUFFER_CAPACITY;
+		eventBuffer->capacities[type] = INITIAL_EVENT_BUFFER_CAPACITY * EVENT_SIZE;
 		eventBuffer->sizes[type] = 0;
 	}
 }
@@ -22,12 +23,17 @@ void event_buffer_deinit(struct EventBuffer *eventBuffer)
 unsigned int event_buffer_add(struct EventBuffer *eventBuffer, void *event)
 {
 	unsigned int eventType = *(unsigned int *)event;
-	if(eventBuffer->capacities[eventType] - eventBuffer->sizes[eventType] * EVENT_SIZE <= EVENT_SIZE)
-	{
-		void * newPointer = realloc(eventBuffer->buffers[eventType], (unsigned int)((float)eventBuffer->capacities[eventType] * 1.2));
 
-		if(newPointer)
+	if(eventBuffer->capacities[eventType] - (eventBuffer->sizes[eventType] * EVENT_SIZE) <= EVENT_SIZE)
+	{
+		unsigned int newCapacity = (unsigned int)((float)eventBuffer->capacities[eventType] * 1.2);
+		void * newPointer = realloc(eventBuffer->buffers[eventType], newCapacity);
+
+		if (newPointer)
+		{
 			eventBuffer->buffers[eventType] = newPointer;
+			eventBuffer->capacities[eventType] = newCapacity;
+		}
 		else
 			assert(!"Couldn't Realloc event buffer");
 	}
