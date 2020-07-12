@@ -3,6 +3,8 @@
 #include "string.h"
 #include "assert.h"
 #include "stdio.h"
+
+#define HAVE_STRUCT_TIMESPEC
 #include "pthread.h"
 
 pthread_mutex_t addEventMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -46,13 +48,13 @@ unsigned int event_buffer_add(struct EventBuffer *eventBuffer, void *event)
 		else
 			assert(!"Couldn't Realloc event buffer");
 	}
-    eventBuffer->sizes[eventType]++;
+	unsigned int eventIndex = eventBuffer->sizes[eventType]++;
 
     if ((error = pthread_mutex_unlock (&addEventMutex)) != 0) {
         fprintf (stderr, "Error = %d (%s)\n", error, strerror(error)); exit (1);
     }
 
-	memcpy(((char*)eventBuffer->buffers[eventType]) + eventBuffer->sizes[eventType] * EVENT_SIZE, event, EVENT_SIZE);
+	memcpy(((char*)eventBuffer->buffers[eventType]) + eventIndex * EVENT_SIZE, event, EVENT_SIZE);
 
 	return 0;
 }

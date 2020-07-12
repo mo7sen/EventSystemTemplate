@@ -1,5 +1,7 @@
 #include "EventSystem.h"
 #include "assert.h"
+#define HAVE_STRUCT_TIMESPEC
+#include "pthread.h"
 #include "stdio.h"
 
 static void event_system_init();
@@ -76,12 +78,38 @@ static inline void handle_event(enum EventType type, void *event)
 	}
 }
 
+void* handle_type(void* eventType)
+{
+    int type = (int)eventType;
+
+    for(unsigned int event = 0; event < EventSystem.bufferPair.read->sizes[type]; ++event)
+    {
+        unsigned int __idx;
+        struct EventListener *listener;
+
+        vec_foreach(&EventSystem.eventListeners[type], listener, __idx) {
+                listener->handlers[type](
+                        (char*)(EventSystem.bufferPair.read->buffers[type]) + (event * EVENT_SIZE)
+                );
+            }
+    }
+    return 0;
+}
+
 static void event_system_update()
 {
 	event_buffer_pair_swap(&EventSystem.bufferPair);
+
+    pthread_t threads[EVENT_TYPE_COUNT];
+
 	loop_event_types {
-		event_buffer_pair_for_each(&EventSystem.bufferPair, type, handle_event);
+	    pthread_create(threads + type, NULL, handle_type, (void*)type);
+    }
+
+    loop_event_types {
+	    pthread_join(threads[type], NULL);
 	}
+
 	event_buffer_pair_clear_read(&EventSystem.bufferPair);
 }
 
